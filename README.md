@@ -1,6 +1,6 @@
-### Fixed APY Stake
+# Fixed APY Stake
 
-# Setup
+### Setup
 
 Create config.json and fill out this values
 
@@ -20,7 +20,7 @@ npm install
 yarn install
 ```
 
-# Running
+### Running
 
 Try running some of the following tasks:
 
@@ -31,9 +31,9 @@ npx hardhat node
 npx hardhat ignition deploy ./ignition/modules/Lock.js
 ```
 
-# Unit test
+### Unit test
 
-# Deployed Addresses
+### Deployed Addresses
 
 TokenA address: [0xD48c23172e05291E07f689F5a204Cc8E41AF9008](https://sepolia.etherscan.io/address/0xD48c23172e05291E07f689F5a204Cc8E41AF9008)
 TokenB address: [0x9b3b5cb46859C0A0Ca05Db539CD5c0DcD2D55315](https://sepolia.etherscan.io/address/0x9b3b5cb46859C0A0Ca05Db539CD5c0DcD2D55315)
