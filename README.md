@@ -32,6 +32,7 @@ npx hardhat ignition deploy ./ignition/modules/Lock.js
 ```
 
 ### Unit test
+![image](https://github.com/0xl2/fixed-apy-stake/assets/37606416/2305b3c0-f3b2-4aa3-b5a0-57e34631ff27)
 
 ### Deployed Addresses
 
