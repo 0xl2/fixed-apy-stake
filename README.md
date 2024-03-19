@@ -36,6 +36,6 @@ npx hardhat ignition deploy ./ignition/modules/Lock.js
 
 ### Deployed Addresses
 
-TokenA address: [0xD48c23172e05291E07f689F5a204Cc8E41AF9008](https://sepolia.etherscan.io/address/0xD48c23172e05291E07f689F5a204Cc8E41AF9008)
-TokenB address: [0x9b3b5cb46859C0A0Ca05Db539CD5c0DcD2D55315](https://sepolia.etherscan.io/address/0x9b3b5cb46859C0A0Ca05Db539CD5c0DcD2D55315)
+TokenA address: [0xD48c23172e05291E07f689F5a204Cc8E41AF9008](https://sepolia.etherscan.io/address/0xD48c23172e05291E07f689F5a204Cc8E41AF9008)  
+TokenB address: [0x9b3b5cb46859C0A0Ca05Db539CD5c0DcD2D55315](https://sepolia.etherscan.io/address/0x9b3b5cb46859C0A0Ca05Db539CD5c0DcD2D55315)  
 Stake address: [0xa6048f396c140b63a91e784fd638f2388c3c62fc](https://sepolia.etherscan.io/address/0xa6048f396c140b63a91e784fd638f2388c3c62fc)
