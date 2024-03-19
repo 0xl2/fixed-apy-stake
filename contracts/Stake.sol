@@ -6,8 +6,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interface/ITokenB.sol";
+import "./interface/IUniswap.sol";
+// https://docs.chain.link/data-feeds/price-feeds/addresses?network=ethereum&page=1#sepolia-testnet
 
+error InvalidApr();
 error ZeroAddress();
+error InvalidToken();
+error InvalidBlock();
 error InvalidClaimTime();
 error InvalidUnstakeTime();
 
@@ -16,9 +21,20 @@ contract Stake is Ownable {
 
     IERC20 public tokenA;
     ITokenB public tokenB;
+    IUniswapPair public pairA;
+    IUniswapPair public pairB;
+
+    bool internal isFirstA;
+    bool internal isFirstB;
+
+    address public constant WETH = 0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9;
+    IUniswapFactory public constant UFactory =
+        IUniswapFactory(0x7E0987E5b3a30e3f2828572Bb659A548460a3003);
 
     uint public constant UnstakeTime = 1 days;
     uint public constant ClaimTime = 1 hours;
+
+    uint public fixedApr;
 
     mapping(address => UserInfo) public userInfo;
     struct UserInfo {
@@ -28,6 +44,7 @@ contract Stake is Ownable {
         uint lastClaimTime;
     }
 
+    event UpdateAPR(uint apr);
     event AddressUpdated(address indexed aToken, address indexed bToken);
     event UserStake(address indexed user, uint amount);
     event UserUnstake(address indexed user, uint amount);
@@ -41,13 +58,66 @@ contract Stake is Ownable {
         if (_tokenA == address(0) || _tokenB == address(0))
             revert ZeroAddress();
 
+        // check pair exists
+        address _pairA = UFactory.getPair(_tokenA, WETH);
+        address _pairB = UFactory.getPair(_tokenB, WETH);
+        if (_pairA == address(0) || _pairB == address(0)) revert InvalidToken();
+
         tokenA = IERC20(_tokenA);
         tokenB = ITokenB(_tokenB);
+
+        pairA = IUniswapPair(_pairA);
+        pairB = IUniswapPair(_pairB);
+
+        address firstToken = pairA.token0();
+        isFirstA = firstToken == _tokenA;
+
+        firstToken = pairB.token0();
+        isFirstB = firstToken == _tokenB;
 
         emit AddressUpdated(_tokenA, _tokenB);
     }
 
-    function _calcReward(uint amount) internal returns (uint) {}
+    function setApr(uint _apr) external onlyOwner {
+        if (_apr > 1e3) revert InvalidApr();
+
+        fixedApr = _apr;
+
+        emit UpdateAPR(fixedApr);
+    }
+
+    function _getRate() internal view returns (uint _reserveA, uint _reserveB) {
+        (uint _reserve0A, uint _reserve1A, uint _blockTimestampLastA) = pairA
+            .getReserves();
+
+        (uint _reserve0B, uint _reserve1B, uint _blockTimestampLastB) = pairB
+            .getReserves();
+
+        if (
+            _blockTimestampLastA == block.timestamp ||
+            _blockTimestampLastB == block.timestamp
+        ) revert InvalidBlock();
+
+        _reserveA =
+            (isFirstA ? _reserve0A : _reserve1A) *
+            (isFirstB ? _reserve1B : _reserve0B);
+        _reserveB =
+            (isFirstB ? _reserve0B : _reserve1B) *
+            (isFirstA ? _reserve1A : _reserve0A);
+    }
+
+    function _calcReward(
+        UserInfo memory info
+    ) internal view returns (uint amountB) {
+        (uint reserveA, uint reserveB) = _getRate();
+
+        amountB = (info.stakeAmt * 1e12 * reserveB) / reserveA;
+        amountB =
+            (amountB * (block.timestamp - info.lastClaimTime) * fixedApr) /
+            (1e4 * 365 days);
+
+        return (amountB / 1e12) + info.pendingReward;
+    }
 
     function stake(uint amount) external {
         if (amount == 0) return;
@@ -56,9 +126,9 @@ contract Stake is Ownable {
         tokenA.safeTransferFrom(msg.sender, address(this), amount);
 
         UserInfo storage info = userInfo[msg.sender];
-
+        info.pendingReward = _calcReward(info);
+        info.lastClaimTime = block.timestamp;
         info.lastStakeTime = block.timestamp;
-        info.pendingReward = _calcReward(info.stakeAmt);
         info.stakeAmt += amount;
 
         emit UserStake(msg.sender, amount);
@@ -76,20 +146,30 @@ contract Stake is Ownable {
         // check unstake amount
         if (amount > info.stakeAmt) amount = info.stakeAmt;
 
-        // calculate reward amount
-        uint rewardAmt = _calcReward(info.stakeAmt);
+        if (amount > 0) {
+            // calculate reward amount
+            uint rewardAmt = _calcReward(info);
 
-        // update info
-        if (info.stakeAmt == amount) delete userInfo[msg.sender];
-        else info.stakeAmt -= amount;
+            // update info
+            if (info.stakeAmt == amount) delete userInfo[msg.sender];
+            else {
+                info.stakeAmt -= amount;
 
-        // transfer tokenA
-        tokenA.safeTransfer(msg.sender, amount);
+                if (rewardAmt != 0) {
+                    // update user info
+                    info.pendingReward = 0;
+                    info.lastClaimTime = block.timestamp;
+                }
+            }
 
-        // mint tokenB
-        if (rewardAmt != 0) tokenB.mint(msg.sender, rewardAmt);
+            // transfer tokenA
+            tokenA.safeTransfer(msg.sender, amount);
 
-        emit UserUnstake(msg.sender, amount);
+            // mint tokenB
+            if (rewardAmt != 0) tokenB.mint(msg.sender, rewardAmt);
+
+            emit UserUnstake(msg.sender, amount);
+        }
     }
 
     function harvest() external {
@@ -99,13 +179,15 @@ contract Stake is Ownable {
         if (info.lastClaimTime + ClaimTime > block.timestamp)
             revert InvalidClaimTime();
 
-        uint rewardAmt = _calcReward(info.stakeAmt);
+        uint rewardAmt = _calcReward(info);
         // mint tokenB
-        if (rewardAmt != 0) tokenB.mint(msg.sender, rewardAmt);
+        if (rewardAmt != 0) {
+            tokenB.mint(msg.sender, rewardAmt);
 
-        // update user info
-        info.pendingReward = 0;
-        info.lastClaimTime = block.timestamp;
+            // update user info
+            info.pendingReward = 0;
+            info.lastClaimTime = block.timestamp;
+        }
 
         emit UserHarvest(msg.sender, rewardAmt);
     }

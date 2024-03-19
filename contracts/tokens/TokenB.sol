@@ -13,7 +13,9 @@ contract TokenB is ERC20, Ownable {
     event Mint(address indexed user, uint amount);
     event SetStake(address indexed stakeAddress);
 
-    constructor() ERC20("TokenB", "TKB") Ownable(msg.sender) {}
+    constructor() ERC20("TokenB", "TKB") Ownable(msg.sender) {
+        _mint(msg.sender, 1e21);
+    }
 
     function setStake(address _stake) external onlyOwner {
         if (_stake == address(0)) revert ZeroAddress();
