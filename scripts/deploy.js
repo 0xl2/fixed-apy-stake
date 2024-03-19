@@ -1,4 +1,5 @@
 const { ethers } = require("hardhat");
+const { parseEther } = require("ethers");
 
 const factoryAddr = "0x7E0987E5b3a30e3f2828572Bb659A548460a3003"
 const routerAddr = "0xC532a74256D3Db42D0Bf7a0400fEFDbad7694008"
@@ -39,7 +40,7 @@ async function main() {
         owner.address,
         getTime(),
         {
-            value: parseEther("1")
+            value: parseEther("0.1")
         }
     )
 
@@ -52,7 +53,7 @@ async function main() {
         owner.address,
         getTime(),
         {
-            value: parseEther("1")
+            value: parseEther("0.1")
         }
     )
 

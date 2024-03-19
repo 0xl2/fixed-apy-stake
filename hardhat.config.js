@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+
 const config = require('./config.json')
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -16,5 +17,8 @@ module.exports = {
       url: `https://eth-sepolia.g.alchemy.com/v2/${config.alchemy_key}`,
       accounts: [config.p_key]
     }
-  }
+  },
+  etherscan: {
+    apiKey: config.etherscan_key,
+  },
 };
