@@ -1,6 +1,5 @@
+require('dotenv')
 require("@nomicfoundation/hardhat-toolbox");
-
-const config = require('./config.json')
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -9,16 +8,16 @@ module.exports = {
   networks: {
     hardhat: {
       forking: {
-        url: `https://eth-sepolia.g.alchemy.com/v2/${config.alchemy_key}`,
+        url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.alchemy_key}`,
         enabled: true,
       }
     },
     sepolia: {
-      url: `https://eth-sepolia.g.alchemy.com/v2/${config.alchemy_key}`,
-      accounts: [config.p_key]
+      url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.alchemy_key}`,
+      accounts: [process.env.p_key]
     }
   },
   etherscan: {
-    apiKey: config.etherscan_key,
+    apiKey: process.env.etherscan_key,
   },
 };

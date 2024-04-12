@@ -2,7 +2,7 @@
 
 ### Setup
 
-Create config.json and fill out this values
+Create ```.env``` and fill out these values
 
 ```bash
 {
