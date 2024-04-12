@@ -5,9 +5,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./interface/ITokenB.sol";
-import "./interface/IUniswap.sol";
-// https://docs.chain.link/data-feeds/price-feeds/addresses?network=ethereum&page=1#sepolia-testnet
+import "../interface/ITokenB.sol";
+import "../interface/IUniswap.sol";
 
 error InvalidApr();
 error ZeroAddress();
